@@ -6,3 +6,4 @@ Dependencies:
 1. Flask
 2. Flask JWT-Extended
 3. flask CORS
+4. flask SQLAlchemy
