@@ -34,6 +34,12 @@ class User(db.Model):
         return f"{self.username}"
 
 
+class User_Book(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+
 app.app_context().push()
 
 
@@ -72,3 +78,22 @@ def login():
 
     access_token = create_access_token(identity=username)
     return jsonify(access_token=access_token)
+
+
+@app.route("/add_book", methods=["POST", "GET"])
+def add_book_user():
+    book_id = request.json.get("book_id", None)
+    username = request.json.get("username", None)
+    if book_id is None or username is None:
+        return {"error": "Missing required parameters"}, 400
+    user = User.query.filter_by(username=username).first()
+    user_id = user.id
+    user_book = User_Book(book_id=book_id, user_id=user_id)
+    db.session.add(user_book)
+    db.session.commit()
+    return {"message": "Book and User added successfully"}, 201
+
+
+if __name__ == '__main__':
+    db.create_all()
+    app.run(debug=True)
