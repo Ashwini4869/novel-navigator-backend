@@ -7,3 +7,4 @@ Dependencies:
 2. Flask JWT-Extended
 3. flask CORS
 4. flask SQLAlchemy
+5. flask Bcrypt
