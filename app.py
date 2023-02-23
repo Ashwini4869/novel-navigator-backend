@@ -9,6 +9,11 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import pandas as pd
+import re
 
 # initialization
 app = Flask(__name__)
@@ -18,8 +23,12 @@ app.config["JWT_SECRET_KEY"] = "overlysecret"  # Change this!
 jwt = JWTManager(app)
 # Initializing database
 db = SQLAlchemy(app)
-
 bcrypt = Bcrypt(app)
+
+# search endpoint
+book_title_df = pd.read_json("./books_titles_df.json")
+vectorizer = TfidfVectorizer()
+tfidf = vectorizer.fit_transform(book_title_df["mod_title"])
 
 
 class User(db.Model):
@@ -78,6 +87,20 @@ def login():
 
     access_token = create_access_token(identity=username)
     return jsonify(access_token=access_token)
+
+
+@app.route("/search", methods=["POST", "GET"])
+def search():
+    query = request.json.get("book_title", None)
+    if query is None:
+        return {"error": "Missing required parameters"}, 400
+    processed_query = re.sub("[^a-zA-Z0-9 ]", "", query.lower())
+    query_vec = vectorizer.transform([processed_query])
+    similarity = cosine_similarity(query_vec, tfidf).flatten()
+    indices = np.argpartition(similarity, -10)[-10:]
+    results = book_title_df.iloc[indices]
+    results = results.sort_values("ratings", ascending=False)
+    return results.head(5).to_json(orient="records")
 
 
 @app.route("/add_book", methods=["POST", "GET"])
