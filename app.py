@@ -89,6 +89,12 @@ def login():
     return jsonify(access_token=access_token)
 
 
+@app.route("/top50books", methods=["GET"])
+def top50books():
+    data = pd.read_json("./top_50_books.json")
+    return data.to_json(orient='records')
+
+
 @app.route("/search", methods=["POST", "GET"])
 def search():
     query = request.json.get("book_title", None)
@@ -100,7 +106,7 @@ def search():
     indices = np.argpartition(similarity, -10)[-10:]
     results = book_title_df.iloc[indices]
     results = results.sort_values("ratings", ascending=False)
-    return results.head(5).to_json(orient="records")
+    return results.head(4).to_json(orient="records")
 
 
 @app.route("/add_book", methods=["POST", "GET"])
@@ -114,7 +120,7 @@ def add_book_user():
     user_book = User_Book(book_id=book_id, user_id=user_id)
     db.session.add(user_book)
     db.session.commit()
-    return {"message": "Book and User added successfully"}, 201
+    return {"message": "Book added successfully."}, 201
 
 
 if __name__ == '__main__':
