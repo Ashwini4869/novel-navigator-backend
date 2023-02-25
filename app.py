@@ -109,7 +109,7 @@ def search():
     return results.head(4).to_json(orient="records")
 
 
-@app.route("/add_book", methods=["POST", "GET"])
+@app.route("/addbook", methods=["POST", "GET"])
 def add_book_user():
     book_id = request.json.get("book_id", None)
     username = request.json.get("username", None)
@@ -121,6 +121,21 @@ def add_book_user():
     db.session.add(user_book)
     db.session.commit()
     return {"message": "Book added successfully."}, 201
+
+
+@app.route("/getrecommendations", methods=["POST", "GET"])
+def get_recommendations():
+    username = request.json.get("username", None)
+    if username is None:
+        return {"error": "Mising required parameters"}, 400
+    user = User.query.filter_by(username=username).first()
+    user_id = user.id
+    object_list = db.session.query(User_Book.book_id).filter(
+        User_Book.user_id == user_id).all()
+    book_list = []
+    for item in object_list:
+        book_list.append(item[0])
+    return jsonify(book_list), 201
 
 
 if __name__ == '__main__':
