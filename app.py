@@ -26,7 +26,7 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 # search endpoint
-book_title_df = pd.read_json("./books_titles_df.json")
+book_title_df = pd.read_json("./books.json")
 vectorizer = TfidfVectorizer()
 tfidf = vectorizer.fit_transform(book_title_df["mod_title"])
 
@@ -105,7 +105,6 @@ def search():
     similarity = cosine_similarity(query_vec, tfidf).flatten()
     indices = np.argpartition(similarity, -10)[-10:]
     results = book_title_df.iloc[indices]
-    results = results.sort_values("ratings", ascending=False)
     return results.head(4).to_json(orient="records")
 
 
