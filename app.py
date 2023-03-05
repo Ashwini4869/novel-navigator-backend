@@ -30,7 +30,7 @@ book_title_df = pd.read_json("./books.json")
 vectorizer = TfidfVectorizer()
 tfidf = vectorizer.fit_transform(book_title_df["mod_title"])
 # reading files
-books_titles = pd.read_json("books_titles_with_ratings.json")
+books_titles = pd.read_json("books_with_ratings.json")
 
 
 class User(db.Model):
@@ -124,11 +124,7 @@ def add_book_user():
     return {"message": "Book added successfully."}, 201
 
 
-@app.route("/getrecommendations", methods=["POST", "GET"])
-def get_recommendations():
-    username = request.json.get("username", None)
-    if username is None:
-        return {"error": "Mising required parameters"}, 400
+def generate_recommendations(username):
     user = User.query.filter_by(username=username).first()
     user_id = user.id
     object_list = db.session.query(User_Book.book_id).filter(
@@ -178,8 +174,17 @@ def get_recommendations():
     all_recs.columns = ["ISBN", "book_count"]
     all_recs = all_recs.merge(books_titles, how="inner", on="ISBN")
     all_recs["score"] = all_recs["book_count"] * \
-        (all_recs["book_count"] / all_recs["Book-Rating"])
-    return (all_recs.sort_values("score", ascending=False).drop_duplicates('Book-Title').head(10)).to_json(orient="records")
+        (all_recs["book_count"] / all_recs["rating"])
+    return (all_recs.sort_values("score", ascending=False).drop_duplicates('title').head(10)).to_json(orient="records")
+
+
+@app.route("/getrecommendations", methods=["POST", "GET"])
+def get_recommendations():
+    username = request.json.get("username", None)
+    if username is None:
+        return {"error": "missing required parameters"}
+    response = generate_recommendations(username)
+    return response
 
 
 if __name__ == '__main__':
